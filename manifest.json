@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Communication Coach for Slack",
+  "version": "1.0.0",
+  "description": "A Chrome Extension that overrides the Slack web app text input box and provides message suggestions for better communication based on GPT-4.",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://app.slack.com/*"],
+      "js": ["content.js"],
+      "css": ["popup.css"]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
