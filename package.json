@@ -4,7 +4,9 @@
   "description": "A Chrome Extension that overrides the Slack web app text input box and provides message suggestions for better communication based on GPT-4.",
   "main": "background.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "preshrinkwrap": "git checkout -- npm-shrinkwrap.json",
+    "postshrinkwrap": "git checkout -- npm-shrinkwrap.json"
   },
   "repository": {
     "type": "git",

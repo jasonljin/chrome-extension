@@ -21,8 +21,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://app.slack.com/*"],
-      "js": ["content.js"],
+      "matches": ["http://*/*", "https://*/*", "https://app.slack.com/*"],
+      "js": [
+        "jquery-3.6.0.min.js",
+        "content.js",
+        "axios.min.js"
+      ],
       "css": ["popup.css"]
     }
   ],

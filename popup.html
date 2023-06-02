@@ -3,21 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Communication Coach for Slack</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-  <link rel="stylesheet" href="popup.css">
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' http://localhost:* http://127.0.0.1:* https://maxcdn.bootstrapcdn.com; script-src-elem 'self' https://cdn.jsdelivr.net https://code.jquery.com https://maxcdn.bootstrapcdn.com">
+  <title>BetterUp Copilot</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">  <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="container">
-    <h1 class="text-center mt-3">Communication Coach for Slack</h1>
+    <h1 class="text-center mt-3">BetterUp Copilot</h1>
     <div class="d-flex justify-content-center mt-4">
       <button id="enableExtension" class="btn btn-success mr-2">Enable Extension</button>
       <button id="disableExtension" class="btn btn-danger">Disable Extension</button>
     </div>
   </div>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script type="module" src="jquery-3.6.0.min.js"></script>
+  <script type="module" src="popper.min.js"></script>
+  <script type="module" src="bootstrap.min.js"></script>
+  <script type="module" src="axios.min.js"></script>
+  <!-- <script src="jquery-3.6.0.min.js"></script>
+  <script src="popper.min.js"></script>
+  <script src="axios.min.js"></script>
+  <script src="bootstrap.min.js"></script> -->
   <script src="popup.js"></script>
 </body>
 </html>
