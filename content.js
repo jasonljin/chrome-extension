@@ -118,37 +118,47 @@ ListenerTracker.init();
     // slackInput.style.border = '1px solid #00f';
 
     const newInput = document.createElement('textarea');
-    newInput.id = slackTextInputId;
-    newInput.style.width = '100%';
-    newInput.style.height = '100%';
-    newInput.style.padding = '8px';
-    newInput.placeholder = 'Copilot enabled... Start typing to get real-time coaching as you type.';
+    slackInput.id = slackTextInputId;
+    slackInput.style.width = '100%';
+    slackInput.style.height = '100%';
+    // slackInput.style.padding = '8px';
+    // slackInput.textContent = 'Copilot enabled... Start typing to get real-time coaching as you type.';
     // newInput.style.backgroundColor = '#fff';
-    newInput.style.border = '2px solid #CE0058';
-    newInput.style.borderRadius = '4px';
-    newInput.style.zIndex = 999;
-    newInput.style.resize = 'none';
+    slackInput.style.border = '2px solid #CE0058';
+    slackInput.style.borderRadius = '4px';
+    slackInput.style.zIndex = 999;
+    // slackInput.style.resize = 'none';
+    // slackInput.appendChild(newInput);
  
     // Get all the observers on slackInput
-    const observers = getEventListeners(slackInput);
-    console.log("slack input observers", observers)
-    // Replace slackInput with newInput
-    slackInput.parentElement.replaceChild(newInput, slackInput);
+    // const observers = getEventListeners(slackInput);
+    // // console.log("slack input observers", observers)
+    // // Replace slackInput with newInput
+    // // slackInput.replaceChildren(newInput);
 
-    // Add all the observers to newInput
-    observers.input.forEach(observer => {
-      newInput.addEventListener('input', observer.listener);
-    });
-    observers.keydown.forEach(observer => {
-      newInput.addEventListener('keydown', observer.listener);
-    });
-    observers.keyup.forEach(observer => {
-      newInput.addEventListener('keyup', observer.listener);
-    });
-    observers.paste.forEach(observer => {
-      newInput.addEventListener('paste', observer.listener);
-    });
+    // // Add all the observers to newInput
+    // observers.input.forEach(observer => {
+    //   newInput.addEventListener('input', observer.listener);
+    // });
+    // observers.keydown.forEach(observer => {
+    //   console.log("add keydown observer")
+    //   newInput.addEventListener('keydown', observer.listener);
+    // });
+    // observers.keyup.forEach(observer => {
+    //   newInput.addEventListener('keyup', observer.listener);
+    // });
+    // observers.paste.forEach(observer => {
+    //   newInput.addEventListener('paste', observer.listener);
+    // });
 
+    // newInput.addEventListener('keydown', (event) => {
+    //   if (event.keyCode === 13) {
+    //     // alert("pressed enter!")
+    //     event.preventDefault();
+    //     // const inputEvent = new Event('input', { bubbles: true });
+    //     // slackInput.dispatchEvent(inputEvent);
+    //   }
+    // });
 
     // slackInput.parentElement.replaceChild(newInput, slackInput);
   }
@@ -234,7 +244,12 @@ ListenerTracker.init();
       listItem.style.padding = '5px 0';
       listItem.style.overflowY = 'scroll';
       listItem.addEventListener('click', () => {
-        document.getElementById(slackTextInputId).value = suggestion;
+        let slackTextInput = document.getElementById(slackTextInputId)
+        let slackTextEditor = slackTextInput.querySelector('.ql-editor');
+
+        let childParagraph = document.createElement('p');
+        childParagraph.innerText = suggestion;
+        slackTextEditor.replaceChildren(childParagraph);
         suggestionContainer.style.display = 'none';
       });
 
@@ -280,8 +295,8 @@ ListenerTracker.init();
     clearTimeout(timeoutId);
     timeoutId = setTimeout(async () => {
         try {
-
-        const inputText = event.target.value;
+          console.log("event value innerText", event.target.textContent)
+        const inputText = event.target.textContent;
         console.log("inputText", inputText, inputText.length)
         if (inputText.length < 20) {
           if (inputText.trim() === '') {
