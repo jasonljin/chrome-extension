@@ -1,0 +1,9 @@
+As an AI language model, I am unable to create or generate image files directly. However, I can guide you on how to create the icon16.png file for your Chrome Extension.
+
+1. Use an image editor like Adobe Photoshop, GIMP, or an online tool like Canva or Figma.
+2. Create a new image with dimensions 16x16 pixels.
+3. Design your icon according to the theme of your Chrome Extension (Communication Coach for Slack).
+4. Save the image as a PNG file with the filename "icon16.png".
+5. Place the "icon16.png" file inside the "icons" folder in your Chrome Extension project directory.
+
+Remember to also create the other icon sizes (icon48.png and icon128.png) following the same steps but with dimensions 48x48 and 128x128 pixels, respectively.
