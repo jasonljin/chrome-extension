@@ -1,28 +1,37 @@
 {
-  "manifest_version": 2,
-  "name": "Extension Name",
+  "manifest_version": 3,
+  "name": "BetterUp Copilot",
   "version": "0.1",
-  "description": "Some Description",
+  "description": "A Chrome Extension that overrides the Slack web app text input box and provides message suggestions for better communication based on GPT-4.",
   "permissions": [
+    "activeTab",
+    "storage"
   ],
   "background": {
-    "scripts": ["static/js/background.js"]
+    "service_worker": "static/js/background.js"
   },
+   "web_accessible_resources": [
+    {
+    "resources": ["popup.html"],
+    "matches": [ "https://*/*" ]
+    },
+    {
+      "resources": ["index.html"],
+      "matches": [ "https://swordfish-next.vercel.app/*" ]
+    }
+  ],
   "content_scripts": [{
-    "js": [ "static/js/content.js" ],
-    "matches": [
-      "http://*.example.com/*", "https://*.example.com/*"
-    ]
+    "js": [
+      "static/js/content.js"
+    ],
+    "matches": ["http://*/*", "https://*/*", "https://app.slack.com/*"]
   }],
   "icons": {
-    "192": "logo192.png"
   },
-  "browser_action": {
+  "action": {
+    "default_popup": "popup.html",
     "default_icon": {
-      "192": "logo192.png"
-    },
-    "default_title": "Popup",
-    "default_popup": "popup.html"
+    }
   },
   "options_ui": {
     "page": "options.html"
