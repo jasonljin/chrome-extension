@@ -1,4 +1,7 @@
-// TODO: convert to React instead of vanilla HTML / Javascript: https://blog.logrocket.com/creating-chrome-extension-react-typescript/
+// @ts-nocheck
+import axios, { AxiosRequestConfig } from 'axios';
+import $ from 'jquery';
+
 var ListenerTracker=new function(){
     var targets=[];
     // listener tracking datas
@@ -105,10 +108,69 @@ ListenerTracker.init();
   const slackTextInputId = 'slackTextInput';
   const suggestionContainerId = 'suggestionContainer';
   const suggestionListId = 'suggestionList';
+  const floatingButtonId = 'floatingButton';
+
+  let isOpen = false;
+
+  function floatingWidgetButton() {
+    const newInput = document.createElement('button');
+    const closeButton = document.createElement('button');
+    const floatingUI = document.createElement('div');
+    newInput.id = floatingButtonId;
+    newInput.style.width = '80px';
+    newInput.style.height = '80px';
+    newInput.style.borderRadius = '40px';
+
+    function resetButton() {
+      newInput.innerText = "";
+      newInput.style.background = "url(https://raw.githubusercontent.com/jasonljin/slack-copilot/main/icons/bu-logo-avatar.png)";
+      newInput.style.backgroundSize = "contain";
+    }
+    // slackInput.style.padding = '8px';
+    // slackInput.textContent = 'Copilot enabled... Start typing to get real-time coaching as you type.';
+    resetButton()
+    
+    newInput.style.border = 'rgba(206, 0, 88, 0.8) 2px solid'; // converted to RGBA
+    newInput.style.zIndex = '9999';
+    newInput.style.left = '40px';
+    newInput.style.bottom = '40px';
+    newInput.style.display = 'block';
+    newInput.style.position = 'fixed';
+
+    const iframe = document.createElement('iframe')
+    iframe.style.width = '500px';
+    iframe.style.height = '800px';
+    iframe.style.zIndex = '9999';
+    iframe.style.left = '40px';
+    iframe.style.bottom = '120px';
+    iframe.style.display = 'block';
+    iframe.style.position = 'fixed';
+
+    newInput.addEventListener('click', (evt) => {
+      evt.preventDefault()
+      chrome.runtime.sendMessage({ open: true }, (response) => {
+        // isOpen = !isOpen
+        iframe.src = "https://swordfish-next.vercel.app/embed"
+        if (newInput.innerHTML == "Close") {
+          floatingUI.removeChild(iframe)
+          resetButton()
+        } else {
+          floatingUI.appendChild(iframe)
+          newInput.innerText = "Close";
+          newInput.style.background = "#fff";
+          newInput.style.color = "#000";
+
+        }
+      })
+    })
+ 
+    floatingUI.appendChild(newInput);
+    document.body.appendChild(floatingUI);
+  }
 
   function overrideSlackTextInput() {
 
-    const slackInput = document.querySelector('[data-qa="message_input"]');
+    const slackInput = document.querySelector('[data-qa="message_input"]') as HTMLElement;
     if (!slackInput) {
       handleError('Failed to override Slack text input box. Disabling extension.');
       return;
@@ -117,16 +179,16 @@ ListenerTracker.init();
     // slackInput.style.backgroundColor = '#fff';
     // slackInput.style.border = '1px solid #00f';
 
-    const newInput = document.createElement('textarea');
+    // const newInput = document.createElement('textarea');
     slackInput.id = slackTextInputId;
     slackInput.style.width = '100%';
     slackInput.style.height = '100%';
     // slackInput.style.padding = '8px';
     // slackInput.textContent = 'Copilot enabled... Start typing to get real-time coaching as you type.';
     // newInput.style.backgroundColor = '#fff';
-    slackInput.style.border = '2px solid #CE0058';
+    slackInput.style.border = 'rgba(206, 0, 88, 0.8) 2px solid'; // converted to RGBA
     slackInput.style.borderRadius = '4px';
-    slackInput.style.zIndex = 999;
+    slackInput.style.zIndex = '999';
     // slackInput.style.resize = 'none';
     // slackInput.appendChild(newInput);
  
@@ -134,7 +196,7 @@ ListenerTracker.init();
     // const observers = getEventListeners(slackInput);
     // // console.log("slack input observers", observers)
     // // Replace slackInput with newInput
-    // // slackInput.replaceChildren(newInput);
+    // slackInput.replaceChildren(newInput);
 
     // // Add all the observers to newInput
     // observers.input.forEach(observer => {
@@ -188,14 +250,28 @@ ListenerTracker.init();
           stop: null,
           temperature: 0.7,
         }
-        console.log("sending req to openAPI", body)
-        const response = await axios.post('https://api.openai.com/v1/completions', body, {
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        suggestions = response.data.choices.map(choice => choice.text.trim())
+        let url = 'https://api.openai.com/v1/completions'
+        // let request: AxiosRequestConfig = {
+        //     data: body as any,
+        //     headers: {
+        //         'Authorization': `Bearer ${apiKey}`,
+        //         'Content-Type': 'application/json',
+        //     }
+        // }
+        let headers = {
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+            }
+        }
+        let request = {
+            // method: 'post', // Add the method property
+            url: url, // Add the url property
+            data: body as any,
+        };
+        console.log("sending req to openAPI", request)
+        const response = await axios.post(url, body, headers);
+        let suggestions = response.data.choices.map(choice => choice.text.trim())
         resolve(suggestions);
       } catch (error) {
         console.log("error fetching suggestion", error)
@@ -212,7 +288,7 @@ ListenerTracker.init();
       suggestionContainer = document.createElement('div');
       suggestionContainer.id = suggestionContainerId;
       suggestionContainer.style.position = 'absolute';
-      suggestionContainer.style.zIndex = 1000;
+      suggestionContainer.style.zIndex = '1000';
       suggestionContainer.style.backgroundColor = '#CE0058';
       suggestionContainer.style.border = '1px solid #fff';
       suggestionContainer.style.borderRadius = '4px';
@@ -227,8 +303,8 @@ ListenerTracker.init();
     }
     suggestionList.id = suggestionListId;
     suggestionList.style.listStyleType = 'none';
-    suggestionList.style.padding = 0;
-    suggestionList.style.margin = 0;
+    suggestionList.style.padding = '0px';
+    suggestionList.style.margin = '0px';
 
     suggestionContainer.appendChild(suggestionList);
 
@@ -245,7 +321,7 @@ ListenerTracker.init();
       listItem.style.overflowY = 'scroll';
       listItem.addEventListener('click', () => {
         let slackTextInput = document.getElementById(slackTextInputId)
-        let slackTextEditor = slackTextInput.querySelector('.ql-editor');
+        let slackTextEditor = slackTextInput.querySelector('.ql-editor') as Element;
 
         let childParagraph = document.createElement('p');
         childParagraph.innerText = suggestion;
@@ -267,12 +343,13 @@ ListenerTracker.init();
 
   function handleError(errorMessage) {
     console.error(errorMessage);
-    alert(errorMessage);
+    // alert(errorMessage);
   }
 
 
   window.addEventListener('load', () => {
     setTimeout(() => {
+      floatingWidgetButton();
       overrideSlackTextInput();
     }, 1000)
   });
@@ -332,3 +409,5 @@ ListenerTracker.init();
   });
 
 })();
+
+export {}

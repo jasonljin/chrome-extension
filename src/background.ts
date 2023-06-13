@@ -19,3 +19,15 @@ function handleMessage(request, sender, sendResponse) {
     return true;
   }
 }
+
+chrome.runtime.onMessage.addListener((request) => {
+  if (request.open) {
+    return new Promise(resolve => {
+      chrome.browserAction.getPopup({}, (popup) => {
+        return resolve(popup)
+      })
+    })
+  }
+})
+
+export {}

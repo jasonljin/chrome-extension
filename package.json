@@ -1,26 +1,50 @@
 {
-  "name": "communication-coach-for-slack",
-  "version": "1.0.0",
-  "description": "A Chrome Extension that overrides the Slack web app text input box and provides message suggestions for better communication based on GPT-4.",
-  "main": "background.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "preshrinkwrap": "git checkout -- npm-shrinkwrap.json",
-    "postshrinkwrap": "git checkout -- npm-shrinkwrap.json"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/yourusername/communication-coach-for-slack.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/yourusername/communication-coach-for-slack/issues"
-  },
-  "homepage": "https://github.com/yourusername/communication-coach-for-slack#readme",
+  "name": "copilot-react",
+  "version": "0.1.0",
+  "private": true,
   "dependencies": {
-    "axios": "^0.21.1",
-    "bootstrap": "^5.1.0",
-    "jquery": "^3.6.0"
+    "@types/jest": "^24.9.1",
+    "@types/node": "^12.20.55",
+    "@types/react": "^16.14.43",
+    "@types/react-dom": "^16.9.19",
+    "axios": "^1.4.0",
+    "jquery": "^3.7.0",
+    "react": "^18.2.0",
+    "react-app-rewired": "^2.2.1",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "typescript": "^3.9.10"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app",
+    "env": {
+      "browser": true,
+      "commonjs": true,
+      "es6": true,
+      "node": true,
+      "webextensions": true
+    }
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.237",
+    "@types/jquery": "^3.5.16"
   }
 }
