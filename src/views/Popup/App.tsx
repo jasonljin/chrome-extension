@@ -33,7 +33,7 @@ function App() {
   return (
     <div className="App">
       {/* <header className="App-header">
-        <h3 className="text-center mt-3">BetterUp Copilot</h3>
+        <h3 className="text-center mt-3">BetterUp Lighthouse</h3>
       </header> */}
       <iframe width="300" height="500" 
         src="https://swordfish-next.vercel.app/embed" 
