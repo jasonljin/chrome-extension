@@ -9,6 +9,8 @@ import $ from 'jquery';
   // const $ = await import('jquery');
   // let suggestions;
   let slackInput;
+  let autocompleteSuggestions = [];
+  // let suggestionContainer;
   let floatingUI;
   let floatingButton;
   let floatingToastNotification;
@@ -229,8 +231,8 @@ import $ from 'jquery';
     const getContextAndFetchGPT4 = async () => {
       const context = captureContextFromPage();
       const prompt = `You're an expert web scraper, that is trained to take in an HTML page, and predict what the user is currently doing. Below is the HTML page the user is currently on:\n${context}\nWhat is the user currently doing on the page?`;
-      const suggestions = await fetchGPT4(prompt);
-      return suggestions;
+      const responses = await fetchGPT4(prompt);
+      return responses;
     };
     return await getContextAndFetchGPT4()
   }
@@ -299,8 +301,8 @@ import $ from 'jquery';
     };
     console.log("sending req to openAPI", request)
     const response = await axios.post(url, body, headers);
-    let suggestions = response.data.choices.map(choice => choice.text.split("Suggestion:").map(x => x.trim())).flat()
-    return suggestions
+    let completions = response.data.choices.map(choice => choice.text.split("Suggestion:").map(x => x.trim())).flat()
+    return completions
   }
   async function fetchChatCompletions(prompt, params={
     model: "gpt-3.5-turbo",
@@ -402,6 +404,24 @@ import $ from 'jquery';
     //   slackTextInputId.appendChild(suggestionContainer);
     }
 
+    const closeButton = document.createElement('button');
+    closeButton.innerText = 'x';
+    closeButton.style.position = 'absolute';
+    closeButton.style.top = '4px';
+    closeButton.style.right = '8px';
+    closeButton.style.backgroundColor = 'transparent';
+    closeButton.style.border = 'none';
+    closeButton.style.color = '#ffffff';
+    closeButton.style.fontSize = '20px';
+    closeButton.style.zIndex = '10002';
+    closeButton.style.cursor = 'pointer';
+    closeButton.addEventListener('click', () => {
+      suggestionContainer.remove();
+    });
+
+    suggestionContainer.appendChild(closeButton);
+    
+
     let suggestionsContainerHeading;
     suggestionsContainerHeading = document.createElement('div');
     suggestionsContainerHeading.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
@@ -409,6 +429,8 @@ import $ from 'jquery';
     suggestionsContainerHeading.style.backdropFilter = 'blur(10px)';
     suggestionsContainerHeading.style.padding = '12px';
     suggestionsContainerHeading.style.fontSize = '14px';
+    suggestionsContainerHeading.style.paddingTop = '24px';
+    suggestionsContainerHeading.style.paddingTop = '24px';
     suggestionsContainerHeading.textContent = 
     'Showing suggestions to be more persuasive to a leadership audience';
 
@@ -466,18 +488,7 @@ import $ from 'jquery';
       listItem.style.padding = '12px';
       listItem.style.overflowY = 'scroll';
       listItem.addEventListener('click', () => {
-        let slackTextInput = document.getElementById(slackTextInputId)
-        let slackTextEditor = slackTextInput.querySelector('.ql-editor') as Element;
-
-        let childParagraph = document.createElement('p');
-        childParagraph.innerText = suggestion;
-        slackTextEditor.replaceChildren(childParagraph);
-        suggestionContainer.style.display = 'none';
-        floatingToastNotification.style.display = 'block';
-        floatingToastNotification.innerText = 'Navigation complete! Good luck on your journey.'
-        setTimeout(() => {
-            floatingToastNotification.style.display = 'none';
-        }, 5000)
+        overrideTextInputWithSuggestion(suggestion)
       });
  
 
@@ -487,7 +498,23 @@ import $ from 'jquery';
     });
   }
 
+  function overrideTextInputWithSuggestion(suggestion) {
+    let slackTextInput = document.getElementById(slackTextInputId)
+      let slackTextEditor = slackTextInput.querySelector('.ql-editor') as Element;
+
+      let childParagraph = document.createElement('p');
+      childParagraph.innerText = suggestion;
+      slackTextEditor.replaceChildren(childParagraph);
+      suggestionContainer.style.display = 'none';
+      floatingToastNotification.style.display = 'block';
+      floatingToastNotification.innerText = 'Navigation complete! Good luck on your journey.'
+      setTimeout(() => {
+          floatingToastNotification.style.display = 'none';
+      }, 5000)
+  }
+
   function hideSuggestions() {
+    autocompleteSuggestions = []
     const suggestionContainer = document.getElementById(suggestionContainerId);
     if (floatingToastNotification) {
         floatingToastNotification.style.display = 'none';
@@ -518,49 +545,63 @@ import $ from 'jquery';
             overrideSlackTextInput();
             // TODO: refactor into helper callback function
             $(document).on('input', `#${slackTextInputId}`, async (event) => {
-  clearTimeout(timeoutId);
-  timeoutId = setTimeout(async () => {
-      try {
-        console.log("event value innerText", event.target.textContent)
-      const inputText = event.target.textContent;
-      console.log("inputText", inputText, inputText.length)
-      if (inputText.length < 20) {
-        if (inputText.trim() === '') {
-          document.getElementById(suggestionContainerId).style.display = 'none';
-          return;
-        }
-        return;
-      } else {
-        // let suggestions = [
-        //   // `Try: "I'm testing autocompletion to make sure our team's messages are accurate and efficient."`,
-        //   // `Try: "Testing our new autocomplete feature - I'm e…o see how this can help streamline our workflow!"`
-        // ]
-        let suggestionContainer = document.getElementById(suggestionContainerId);
-        if (floatingToastNotification) {
-            floatingToastNotification.style.display = 'block';
-            floatingToastNotification.innerText = 'Lighthouse is plotting the course...'
-        }
-        if (slackInput) {
-          slackInput.style.borderImage = 'radial-gradient(ellipse at var(--gradX) var(--gradY), var(--c1), var(--c1) 10%, var(--c2) 40%) 30';
-          slackInput.style.animation = 'borderRadial var(--d) linear infinite forwards';
-        }
+              clearTimeout(timeoutId);
+              
+              timeoutId = setTimeout(async () => {
+                  try {
+                    console.log("event value innerText", event.target.textContent)
+                  const inputText = event.target.textContent;
+                  console.log("inputText", inputText, inputText.length)
+                  if (inputText.length < 20) {
+                    if (inputText.trim() === '') {
+                      document.getElementById(suggestionContainerId).style.display = 'none';
+                      return;
+                    }
+                    return;
+                  } else {
+                    // let suggestions = [
+                    //   // `Try: "I'm testing autocompletion to make sure our team's messages are accurate and efficient."`,
+                    //   // `Try: "Testing our new autocomplete feature - I'm e…o see how this can help streamline our workflow!"`
+                    // ]
+                    let suggestionContainer = document.getElementById(suggestionContainerId);
+                    if (floatingToastNotification) {
+                        floatingToastNotification.style.display = 'block';
+                        floatingToastNotification.innerText = 'Lighthouse is plotting the course...'
+                    }
+                    if (slackInput) {
+                      slackInput.style.borderImage = 'radial-gradient(ellipse at var(--gradX) var(--gradY), var(--c1), var(--c1) 10%, var(--c2) 40%) 30';
+                      slackInput.style.animation = 'borderRadial var(--d) linear infinite forwards';
+                    }
 
-        const { suggestions, thoughts } = await fetchGPT4MessageSuggestions(inputText);
-        // const debouncedFetch = debounce(fetchGPT4Suggestions, 10000);
-        // await debouncedFetch(inputText);
-        console.log("suggestions", suggestions)
-        // if (suggestions && suggestions.length > 0) {
-          hideSuggestions();
-        displaySuggestions(suggestions, thoughts);
-        // }
-      }
+                    const { suggestions, thoughts } = await fetchGPT4MessageSuggestions(inputText);
+                    hideSuggestions();
+                    autocompleteSuggestions = suggestions
+                    // const debouncedFetch = debounce(fetchGPT4Suggestions, 10000);
+                    // await debouncedFetch(inputText);
+                    // if (suggestions && suggestions.length > 0) {
+                    displaySuggestions(suggestions, thoughts);
+                    // }
+                  }
 
     } catch (error) {
-      handleError('Failed to fetch suggestions from GPT-4 API: ' + error);
-    }
-  }, 3000)
-    
+        handleError('Failed to fetch suggestions from GPT-4 API: ' + error);
+      }
+    }, 3000)
+      
+              });
+            $(document).on('keydown', (event) => {
+              if (event.key === 'Escape') {
+                hideSuggestions();
+              }
+              if ((event.key === 'Tab' || event.keyCode == 9 || event.which == 9)) {
+                event.preventDefault();
+                alert("pressed tab, autocompleting: " + autocompleteSuggestions[0])
+                if (autocompleteSuggestions.length > 0) {
+                  overrideTextInputWithSuggestion(autocompleteSuggestions[0]);
+                }
+              }
             });
+            
           break;
         case currentUrl.includes('mail.google.com'):
           // Add code specific to mail.google.com
@@ -589,7 +630,7 @@ import $ from 'jquery';
 
   window.addEventListener('load', () => {
     setTimeout(() => {
-        setupStyling()
+      setupStyling()
       floatingWidgetButton();
       triggerOverrideForSupportedWebsite()
     }, 1000)
