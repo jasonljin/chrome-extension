@@ -7,7 +7,7 @@ function saveOptions() {
   const apiKey = (document.getElementById('apiKeyInput') as HTMLInputElement).value;
   chrome.storage.sync.set({ apiKey: apiKey }, () => {
     const status = document.getElementById('status');
-    status.textContent = 'Options saved.';
+    status.textContent = 'Options saved. Please reload the page Lighthouse is active on.';
     setTimeout(() => {
       status.textContent = '';
     }, 1000);
