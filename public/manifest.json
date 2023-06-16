@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BetterUp Lighthouse",
-  "version": "0.1",
+  "version": "0.1.1",
   "description": "A Chrome Extension that overrides the Slack web app text input box and provides message suggestions for better communication based on GPT-4.",
   "permissions": [
     "activeTab",

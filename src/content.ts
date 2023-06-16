@@ -224,6 +224,16 @@ import $ from 'jquery';
     }, 4000);
   }
 
+  function showToastNotification(toastMessage, duration=5000) {
+    floatingToastNotification.style.transform = 'scaleX(1)';
+    floatingToastNotification.style.left = '40px';
+    floatingToastNotification.innerText = toastMessage;
+    floatingToastNotification.style.display = 'block';
+    setTimeout(() => {
+        floatingToastNotification.style.display = 'none';
+    }, duration);
+  }
+
   async function parseCurrentHTML() {
     const captureContextFromPage = () => {
       const elements = Array.from(document.querySelectorAll('body *'));
@@ -247,32 +257,36 @@ import $ from 'jquery';
   }
 
 
+  
   function isSupportedWebsite() {
     const supportedWebsites = [
+      'workday.com',
       'slack.com',
       'mail.google.com',
       'linkedin.com',
       'meet.google.com',
       'calendar.google.com',
     ];
-
+    
     return supportedWebsites.some(website => window.location.origin.includes(website));
   }
   function mapSupportedWebsiteToEnum() {
-    const supportedWebsites = [
+        const supportedWebsites = [
+      'workday.com',
       'slack.com',
       'mail.google.com',
       'linkedin.com',
       'meet.google.com',
       'calendar.google.com',
     ];
-
     const supportedWebsiteLabels = {
       'slack.com': "Slack",
       'mail.google.com': "Gmail",
       'linkedin.com': "Linkedin",
       'meet.google.com': "Google Meet",
-      'calendar.google.com': "Google Calendar"
+      'calendar.google.com': "Google Calendar",
+      'workday.com': "Workday",
+      'myworkday.com': "Workday"
     }
 
     if (isSupportedWebsite()) {
@@ -284,8 +298,28 @@ import $ from 'jquery';
 
   function overrideSlackTextInput() {
 
-    let slackInput = document.querySelector('[data-qa="message_input"]') as HTMLElement;
-    activeInput = slackInput;
+    let slackInputs = document.querySelectorAll('[data-qa="message_input"]') as HTMLElement[];
+
+    let slackInput;
+
+    console.log("slackInputs", slackInputs)
+    if (slackInputs.length > 1) {
+      slackInput = Array.from(slackInputs).find(input => input.classList.contains('focus')) || slackInputs[0];
+    } else {
+      slackInput = slackInputs[0];
+    }
+    if (slackInput) {
+      if (activeInput) {
+        activeInput.id = `${activeInputId}-unfocused`
+        activeInput.style.border = 'rgba(255, 255, 255, 0.1) 2px solid'; // converted to RGBA
+        activeInput.style.borderRadius = '4px';
+      }
+      slackInput.id = activeInputId;
+      activeInput = slackInput;
+      // show initial red border initialize animation on border
+      // slackInput.style.zIndex = '999';
+    }
+    
     if (!slackInput) {
       handleError('Failed to override Slack text input box. Disabling extension.');
       return;
@@ -295,22 +329,50 @@ import $ from 'jquery';
     // slackInput.style.border = '1px solid #00f';
 
     // const floatingButton = document.createElement('textarea');
-    slackInput.id = activeInputId;
     slackInput.style.width = '100%';
     slackInput.style.height = '100%';
     // slackInput.style.padding = '8px';
     // slackInput.textContent = 'Copilot enabled... Start typing to get real-time coaching as you type.';
     // newInput.style.backgroundColor = '#fff';
 
-    // show initial red border initialize animation on border
-    activeInput.style.border = 'rgba(255, 255, 255, 0.1) 2px solid'; // converted to RGBA
-    activeInput.style.borderImage = 'radial-gradient(ellipse at var(--gradX) var(--gradY), var(--c4), var(--c4) 40%, var(--c5) 70%) 30';
-    activeInput.style.animation = 'borderRadial var(--d) linear infinite forwards';
-    setTimeout(() => {
+    if (activeInput) {
       activeInput.style.border = 'rgba(255, 255, 255, 0.1) 2px solid'; // converted to RGBA
-      activeInput.style.borderRadius = '4px';
-    }, 2000)
-    slackInput.style.zIndex = '999';
+      activeInput.style.borderImage = 'radial-gradient(ellipse at var(--gradX) var(--gradY), var(--c4), var(--c4) 40%, var(--c5) 70%) 30';
+      activeInput.style.animation = 'borderRadial var(--d) linear infinite forwards';
+      setTimeout(() => {
+        activeInput.style.border = 'rgba(255, 255, 255, 0.1) 2px solid'; // converted to RGBA
+        activeInput.style.borderRadius = '4px';
+      }, 2000)
+    }
+
+  }
+
+  function overrideWorkdayTextInput() {
+    let editableInputs = document.querySelectorAll('.cke_editable') as HTMLElement[];
+    let inputsArray = Array.from(editableInputs);
+    let focusedInput = inputsArray.find(input => {
+      let currentElement = input;
+      for (let i = 0; i < 3; i++) {
+        if (!currentElement.parentElement) {
+          return false;
+        }
+        currentElement = currentElement.parentElement;
+      }
+      return currentElement.classList.contains('cke_focus');
+    });
+    if (focusedInput) {
+      focusedInput.id = activeInputId;
+      activeInput = focusedInput;
+      activeInput.style.border = 'rgba(255, 255, 255, 0.1) 2px solid';
+      activeInput.style.borderImage = 'radial-gradient(ellipse at var(--gradX) var(--gradY), var(--c4), var(--c4) 40%, var(--c5) 70%) 30';
+      activeInput.style.animation = 'borderRadial var(--d) linear infinite forwards';
+      showToastNotification("Looking for support on a 360 review?")
+      setTimeout(() => {
+        activeInput.style.border = 'rgba(255, 255, 255, 0.1) 2px solid';
+        activeInput.style.borderRadius = '4px';
+      }, 2000)
+    }
+    
   }
 
   function overrideLinkedinNewPostTextInput() {
@@ -429,16 +491,57 @@ import $ from 'jquery';
         });
 
         console.log("current scenario", scenario)
+        function getElementsWithClass(parentClass, targetClass) {
+          const parentElement = document.querySelector(parentClass);
+          if (parentElement) {
+            return Array.from(parentElement.getElementsByClassName(targetClass));
+          }
+          return [];
+        }
 
+        let audienceContext = '';
          function generatePrompt(scenario: string) {
             let prompt = '';
 
             switch (scenario) {
+              case "Performance review": 
+                  audienceContext = document.querySelector('[data-automation-id="pageHeader"]').innerText
+                  prompt = `You're a performance feedback coach bot, designed to guide your client to provide more constructive, specific, and appropriate feedback on ${websiteContext}. 
+                  Your client is on Workday 360. Help them give feedback to ${audienceContext.split("\n")[1]} in the following ways:
+                   a) Come up with meaningful feedback, use helpful templates where relevant
+                   b) Avoid being too positive (or too negative), guide them to center the feedback to be more balanced
+                   c) Include specific examples, and avoid speaking in generalities
+                   d) Identify and callout unconscious biases (such as recency bias, gender bias)
+                    e) Identify inappropriate language (talk about socializing, personal things, 'mom duties' etc), and help them avoid such language
+
+                  Only share feedback and templates. Never complete the rest of their response. Address your client directly.
+                  Think through what the best recommendation you can provide and share those "thoughts" with the prefix "Thought:". Then provide the best recmmendation prefixed with "Suggestion:".
+                  Below is the feedback that they're typing currently. Give your best recommendation for how to improve their performance review process:`;
+                  break;
               case 'Communication':
-                prompt = `You're a communication coach bot, designed to help your client be more concise, persuasive, thoughtful, and inspiring, as they're messaging their teammates on ${websiteContext}. 
+                if (websiteContext == "Slack") {
+                  function isInThreadsSidePanel() {
+                    const activeTextInputParent = activeInput.closest('.p-threads_flexpane_container');
+                    return !!activeTextInputParent;
+                  }
                   
+                  let audience;
+                  let conversationContext;
+                  if (isInThreadsSidePanel()) {
+                    alert("in a thread")
+                    const sendersInThread = getElementsWithClass('.p-threads_flexpane_container', 'c-message__sender');
+                    console.log("sendersInThread", sendersInThread)
+                    audience = Array.from(new Set(sendersInThread.map(sender => sender.innerText))).join(', ');
+                    alert("audience: " + audience)
+                  } else {
+                    audience = document.querySelector('[data-qa="channel_name"]').innerText;
+                  }
+                  audienceContext = `They are currently writing a message to ${audience}. Determine whether this is a channel, a group of people, or an individual, and tailor the message accordingly.`
+                }
+                prompt = `You're a communication coach bot, designed to help your client be more concise, persuasive, thoughtful, and inspiring, as they're messaging their teammates on ${websiteContext}. 
                   You're allowed to selectively use ${websiteContext}-friendly markdown, new paragraphs, and emojis, but only if it improves the message in being more concise, persuasive, thoughtful or impactful.
                   Think through what the best recommendation you can provide and share those "thoughts" with the prefix "Thought:". Then provide the new message prefixed with "Suggestion:".
+                  ${audienceContext}
                   Below is the message that they're typing currently, give your best recommendation for how to make it more concise, thoughtful, persuasive, or inspiring:`;
                 break;
               // Add more cases for different scenarios if needed
@@ -475,7 +578,6 @@ import $ from 'jquery';
         
         let prompt = generatePrompt(scenario)
 
-        console.log("prompt", prompt)
         let params = {
           model: "gpt-3.5-turbo", 
           max_tokens: 400,
@@ -487,7 +589,10 @@ import $ from 'jquery';
         let joinedPrompt = `${prompt}
         ${inputText}`
 
+        console.log("joinedPrompt", joinedPrompt)
+
         let { suggestions, thoughts } = await fetchChatCompletions(joinedPrompt, params, apiKey)       
+        console.log("suggestions & thoughts", suggestions, thoughts)
         resolve({ suggestions, thoughts });
       } catch (error) {
         console.log("error fetching suggestion", error)
@@ -504,7 +609,11 @@ import $ from 'jquery';
       suggestionContainer = document.createElement('div');
       suggestionContainer.id = suggestionContainerId;
       suggestionContainer.style.position = 'absolute';
+      if (scenario == "Performance review") {
+        suggestionContainer.style.right = "40px";
+      } else {
         suggestionContainer.style.left = "40px";
+      }
         suggestionContainer.style.bottom = "160px";
       suggestionContainer.style.zIndex = '10002';
     suggestionContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
@@ -514,7 +623,7 @@ import $ from 'jquery';
       suggestionContainer.style.borderRadius = '8px';
       suggestionContainer.style.padding = '0px';
       suggestionContainer.style.width = '500px';
-      suggestionContainer.style.height = '500px';
+      suggestionContainer.style.height = 'auto';
       suggestionContainer.style.display = 'block';
 
       floatingUI.appendChild(suggestionContainer);
@@ -537,6 +646,8 @@ import $ from 'jquery';
     });
 
     suggestionContainer.appendChild(closeButton);
+ 
+    suggestionContainer.appendChild(closeButton);
     
 
     let suggestionsContainerHeading;
@@ -547,8 +658,8 @@ import $ from 'jquery';
     suggestionsContainerHeading.style.padding = '12px';
     suggestionsContainerHeading.style.fontSize = '14px';
     suggestionsContainerHeading.style.fontFamily = "Soehne Buch";
-    suggestionsContainerHeading.style.paddingTop = '24px';
-    suggestionsContainerHeading.style.paddingBottom = '24px';
+    suggestionsContainerHeading.style.paddingTop = '16px';
+    suggestionsContainerHeading.style.paddingBottom = '16px';
     suggestionsContainerHeading.textContent = suggestionsContainerHeadingText;
     // const divider = document.createElement('hr');
     // divider.style.border = '1px solid gray';
@@ -587,8 +698,33 @@ import $ from 'jquery';
           subheading.style.borderRadius = '8px';
           subheading.style.backgroundColor = 'rgba(206, 0, 88, 0.2)';
           subheading.style.color = '#fff';
-          subheading.style.position = 'absolute';
-          subheading.style.bottom = '0px'
+          const feedbackButtonDiv = document.createElement('div');
+          const feedbackButton = document.createElement('button');
+          feedbackButton.innerText = 'Give feedback for Lighthouse';
+          feedbackButton.style.backgroundColor = 'rgba(255, 255, 255, 1)';
+          feedbackButton.style.border = 'none';
+          feedbackButton.style.color = '#000';
+          feedbackButton.style.fontSize = '14px';
+          feedbackButton.style.margin = '12px';
+          feedbackButton.style.marginBottom = '16px';
+          feedbackButton.style.padding = '8px 12px';
+          feedbackButton.style.borderRadius = '4px';
+          feedbackButton.style.cursor = 'pointer';
+
+          
+          feedbackButton.style.display = 'flex';
+          feedbackButton.style.justifyContent = 'flex-end';
+          feedbackButton.style.textAlign = 'right';
+          feedbackButtonDiv.appendChild(feedbackButton);
+          
+          feedbackButton.addEventListener('click', () => {
+            // Add your event handler for the feedback button here
+            window.open('https://app.slack.com/client/T02BP494Z/C05D68C65LZ', '_blank');
+          });
+
+          suggestionContainer.appendChild(feedbackButtonDiv);
+          // subheading.style.position = 'absolute';
+          // subheading.style.marginBottom = '56px'
           suggestionContainer.appendChild(subheading);
       }
       const suggestionParagraph = document.createElement('p');
@@ -600,6 +736,8 @@ import $ from 'jquery';
       listItem.style.position = 'relative';
       listItem.style.height = '100%';
       listItem.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+      listItem.style.boxShadow = 'rgba(255, 231, 125, 0.352) 0px 4px 10px 0px';
+      
       listItem.style.border = '2px #E7E6E7';
       listItem.style.borderRadius = '8px';
       listItem.style.cursor = 'pointer';
@@ -611,7 +749,7 @@ import $ from 'jquery';
       tabIcon.style.backgroundColor = 'rgba(30, 30, 30, 0.9)';
       tabIcon.style.padding = '8px';
 
-      if (scenario == 'Communication') {
+      if (scenario == 'Communication' || scenario == 'Performance review') {
         tabIcon.textContent = '↹ Tab';
       } else {
         tabIcon.textContent = 'Go to resource';
@@ -639,26 +777,38 @@ import $ from 'jquery';
 
       suggestionList.appendChild(listItem);
     });
+    
   }
 
   function overrideTextInputWithSuggestion(suggestion) {
-      let activeTextEditor = document.querySelector('.ql-editor') as Element;
+      let textEditors = document.querySelectorAll('.ql-editor') as Element[];
 
-      let childParagraph = document.createElement('p');
-      childParagraph.innerText = suggestion;
-      activeTextEditor.replaceChildren(childParagraph);
-      suggestionContainer.style.display = 'none';
-      floatingToastNotification.style.display = 'block';
-      floatingToastNotification.innerText = 'Navigation complete! Good luck on your journey.'
+      if (!Array.isArray(textEditors)) {
+        textEditors = Array.from(textEditors);
+      }
+      console.log("textEditors", textEditors)
+      const activeTextEditor = textEditors.find(editor => {
+        const parentElement = editor.parentElement;
+        return (parentElement && parentElement.id == activeInputId) || editor.classList.contains("focus");
+      }) || textEditors[0];
+
+      console.log("activeTextEditor", activeTextEditor)
+      const suggestionContainer = document.getElementById(suggestionContainerId);
+      if (activeTextEditor) {
+        let childParagraph = document.createElement('p');
+        childParagraph.innerText = suggestion;
+        activeTextEditor.replaceChildren(childParagraph);
+        suggestionContainer.style.display = 'none';
+        showToastNotification('Navigation complete! Good luck on your journey.')
+        
+      } else {
+        showToastNotification("Something went wrong! Couldn't find where to send this message.")
+      }
       if (activeInput) {
         // show green border animation
         activeInput.style.borderImage = 'radial-gradient(ellipse at var(--gradX) var(--gradY), var(--c3), var(--c2) 10%, var(--c3) 40%) 30';
         activeInput.style.animation = 'borderRadial var(--d) linear infinite forwards';
       }
-      setTimeout(() => {
-        // reset input border
-        floatingToastNotification.style.display = 'none';
-      }, 5000)
       setTimeout(() => {
         activeInput.style.border = 'rgba(255, 255, 255, 0.1) 2px solid'; // converted to RGBA
         activeInput.style.borderRadius = '4px'; // converted to RGBA
@@ -670,7 +820,6 @@ import $ from 'jquery';
     const suggestionContainer = document.getElementById(suggestionContainerId);
     if (floatingToastNotification) {
         floatingToastNotification.style.display = 'none';
-        floatingToastNotification.innerText = 'Lighthouse is plotting the course...'
     }
     if (suggestionContainer) {
       suggestionContainer.remove();
@@ -709,7 +858,12 @@ import $ from 'jquery';
         let detectedKeywords = detectKeywords(inputText, triggerKeywords)
 
         if (inputText.length < 20) {
+          floatingToastNotification.innerText = 'Lighthouse is awaiting course...';
+          floatingToastNotification.style.display = 'block';
           if (inputText.trim() === '') {
+            floatingToastNotification.style.display = 'none';
+            activeInput.style.border = 'rgba(255, 255, 255, 0.1) 2px solid'; // converted to RGBA
+            activeInput.style.borderRadius = '4px';
             document.getElementById(suggestionContainerId).style.display = 'none';
             return;
           }
@@ -720,23 +874,19 @@ import $ from 'jquery';
           //   // `Try: "Testing our new autocomplete feature - I'm e…o see how this can help streamline our workflow!"`
           // ]
           let suggestionContainer = document.getElementById(suggestionContainerId);
-          if (floatingToastNotification) {
-              floatingToastNotification.style.display = 'block';
-              floatingToastNotification.innerText = 'Lighthouse is plotting the course...'
-          }
+          hideSuggestions();
+          showToastNotification('Lighthouse is plotting a course...')
           if (activeInput) {
             activeInput.style.borderImage = 'radial-gradient(ellipse at var(--gradX) var(--gradY), var(--c1), var(--c1) 10%, var(--c2) 40%) 30';
             activeInput.style.animation = 'borderRadial var(--d) linear infinite forwards';
           }
 
-          console.log("detectedKeywords", detectedKeywords)
-          let scenario = detectedKeywords.length > 0 ? detectedKeywords[0]: "Communication"
+          let scenario = websiteContext == "Workday" ? "Performance review":detectedKeywords.length > 0 ? detectedKeywords[0]: "Communication"
 
           const { suggestions, thoughts } = await fetchGPT4MessageSuggestions(inputText, scenario, websiteContext);
-          hideSuggestions();
           autocompleteSuggestions = suggestions
 
-          let suggestionSubheading = websiteContext == "Linkedin" ? "Showing relevant suggestions for Linkedin": "Showing suggestions to be more persuasive to a leadership audience"
+          let suggestionSubheading = `Showing relevant suggestions for ${websiteContext} ${scenario}`
           // const debouncedFetch = debounce(fetchGPT4Suggestions, 10000);
           // await debouncedFetch(inputText);
           // if (suggestions && suggestions.length > 0) {
@@ -757,6 +907,7 @@ import $ from 'jquery';
     if (isSupportedWebsite()) {
       console.log("website is supported, overriding")
       const currentUrl = window.location.origin;
+
       switch (true) {
         case currentUrl.includes('slack.com'):
             console.log("adding slack coaching overrides")
@@ -764,6 +915,27 @@ import $ from 'jquery';
             overrideSlackTextInput();
             floatingToastNotification.innerText = 'Lighthouse is ready, awaiting your command.';
             // TODO: refactor into helper callback function
+             const slackObservers = new MutationObserver((mutations) => {
+               mutations.forEach((mutation) => {
+                if (mutation.addedNodes.length > 0) {
+                  mutation.addedNodes.forEach((node) => {
+                    if (node.classList && node.classList.contains('p-threads_flexpane_container')) {
+                      overrideSlackTextInput();                
+                      // $(document).on('input', `#${activeInputId}`, onTypeIntoActiveInput);      
+                    }
+                  })
+                }
+                if (mutation.attributeName === 'class') {
+                  const targetNode = mutation.target as HTMLElement;
+                  if (targetNode.getAttribute("data-qa") === 'message_input' && targetNode.classList.contains('focus')) {
+                    overrideSlackTextInput();
+                    // $(document).on('input', `#${activeInputId}`, onTypeIntoActiveInput);
+                  }
+                }
+               
+            });
+          });
+          slackObservers.observe(document.body, { attributes:true, childList: true, subtree: true });
             $(document).on('input', `#${activeInputId}`, onTypeIntoActiveInput);
             $(document).on('keydown', (event) => {
               if (event.key === 'Escape') {
@@ -776,7 +948,6 @@ import $ from 'jquery';
                 }
               }
             });
-            
           break;
         case currentUrl.includes('mail.google.com'):
           // Add code specific to mail.google.com
@@ -811,16 +982,49 @@ import $ from 'jquery';
         case currentUrl.includes('calendar.google.com'):
           // Add code specific to calendar.google.com
           break;
+        case currentUrl.includes('workday.com'):
+          // Add code specific to workday.com
+            overrideWorkdayTextInput();
+            floatingToastNotification.innerText = 'Lighthouse is ready, awaiting your command.';
+            // TODO: refactor into helper callback function
+             const workdayObservers = new MutationObserver((mutations) => {
+               mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'class') {
+                  const targetNode = mutation.target as HTMLElement;
+                  if (targetNode.classList.contains('cke_focus')) {
+                    overrideWorkdayTextInput();
+                    // $(document).on('input', `#${activeInputId}`, onTypeIntoActiveInput);
+                  }
+                }
+               
+            });
+          });
+          workdayObservers.observe(document.body, { attributes:true, childList: true, subtree: true });
+            $(document).on('input', `#${activeInputId}`, onTypeIntoActiveInput);
+             $(document).on('keydown', (event) => {
+              if (event.key === 'Escape') {
+                if (autocompleteSuggestions.length > 0) {
+                  event.preventDefault();
+                  hideSuggestions();
+                }
+              }
+              if ((event.key === 'Tab' || event.keyCode == 9 || event.which == 9)) {
+                event.preventDefault();
+                if (autocompleteSuggestions.length > 0) {
+                  overrideTextInputWithSuggestion(autocompleteSuggestions[0]);
+                }
+              }
+            });
+          break;
         default:
           console.log('Unsupported website');
       }
         
     } else {
-      floatingToastNotification.innerText = 'Lighthouse is not active on this website.';
-      setTimeout(() => {
-        floatingToastNotification.style.display = 'none'
-      }, 3000)
+      showToastNotification('Lighthouse is not active on this website.', 3000)
       floatingButton.style.border = '#acacac 2px dashed'; // converted to RGBA
+      floatingButton.style.opacity = '10%'
+      floatingButton.style.zIndex = 1
     }
   }
 
