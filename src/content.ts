@@ -2,6 +2,51 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import $ from 'jquery';
 
+const PROMPTLAYER_API_KEY = ""
+
+async function promptLayer(tags, engine, functionName, prompt, messages, requestResponse, requestStartTime, requestEndTime) {
+  if (!PROMPTLAYER_API_KEY) {
+    console.error('promptLayer', 'no api key')
+    return Promise.resolve();
+  }
+  
+  if (prompt === null && messages === null) {
+    console.error('promptLayer', 'no prompt or messages')
+    return Promise.resolve();
+  }
+
+  var kwargs = {"engine": engine};
+  if (messages !== null) {
+    kwargs["messages"] = messages;
+  } 
+  if (prompt !== null) {
+    kwargs["prompt"] = prompt;
+  }
+
+  try {
+    const requestInput = {
+      "function_name": functionName,
+      "args": [],
+      "kwargs": kwargs,
+      "tags": tags,
+      "request_response": requestResponse,
+      "request_start_time": Math.floor(requestStartTime / 1000),
+      "request_end_time": Math.floor(requestEndTime / 1000),
+      "api_key": PROMPTLAYER_API_KEY,
+    };
+    const data = await fetch('https://api.promptlayer.com/track-request', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(requestInput),
+    })
+  } catch (e) {
+    console.error('promptLayer error', e);
+  }
+}
+
 (async function() {
   // const axiosSrc = chrome.extension.getURL('/axios.min.js')
   // const axiosSrc = chrome.extension.getURL('/axios.min.js')
@@ -125,7 +170,7 @@ import $ from 'jquery';
     iframe.style.backgroundColor = "white";
 
     function createCoachingPromptFromURL(url) {
-        let topic = encodeURIComponent(`better improving my performance, productivity and communication on the website: "${url}". Categorize the URL to a specific topic of productivity of collaboration, communication, composition, project management, 
+        let topic = encodeURIComponent(`better improving my performance, productivity and communication on the website: "${url}". Categorize the URL to a specific topic of productivity of performance reviews, collaboration, communication, composition, project management, 
         and provide relevant coaching and expertise relevant to that website and the categorized topic. Ask the user how you can help them on their current task on this website`)
         return topic
     }
@@ -457,9 +502,14 @@ import $ from 'jquery';
         url: url, // Add the url property
         data: body as any,
     };
+
+    var requestStartTime = Date.now()
     
     console.log("sending req to openAPI", request)
     const response = await axios.post(url, body, headers);
+    var requestEndTime = Date.now()
+    promptLayer(['lighthouse-chrome-extension'], params.model, "openai.ChatCompletion.create", prompt, undefined, response.data, requestStartTime, requestEndTime);
+
     let thoughts = response.data.choices.map(choice => choice.message.content.split("Suggestion:").map(x => x.trim())).flat().filter(text => text.includes("Thought:"));
     let suggestions = response.data.choices.map(choice => choice.message.content.split("Suggestion:").map(x => x.trim())).flat().filter(text => !text.includes("Thought:"));
     return { suggestions, thoughts }
@@ -473,16 +523,18 @@ import $ from 'jquery';
         const apiKey = await new Promise((resolve, reject) => {
           chrome.storage?.sync.get(['apiKey'], (result) => {
             if (chrome.runtime.lastError) {
-              reject(chrome.runtime.lastError);
+              resolve("")
+              // reject(chrome.runtime.lastError);
             } else {
               if (!result.apiKey) {
-                if (window.confirm("No API key set! Please press OK to set your OpenAPI key in the extension settings.")) {
-                  {
-                    chrome.runtime.sendMessage("openOptionsPage");
-                    // reject(chrome.runtime.lastError);
-                    // window.location.href='chrome://extensions/?options=igekdceaeidlplodklgkdhkbbmmgeggf';
-                  };
-                }
+                resolve("")
+                // if (window.confirm("No API key set! Please press OK to set your OpenAPI key in the extension settings.")) {
+                //   {
+                //     chrome.runtime.sendMessage("openOptionsPage");
+                //     // reject(chrome.runtime.lastError);
+                //     // window.location.href='chrome://extensions/?options=igekdceaeidlplodklgkdhkbbmmgeggf';
+                //   };
+                // }
               } else {
                 resolve(result.apiKey);
               }
@@ -528,11 +580,9 @@ import $ from 'jquery';
                   let audience;
                   let conversationContext;
                   if (isInThreadsSidePanel()) {
-                    alert("in a thread")
                     const sendersInThread = getElementsWithClass('.p-threads_flexpane_container', 'c-message__sender');
                     console.log("sendersInThread", sendersInThread)
                     audience = Array.from(new Set(sendersInThread.map(sender => sender.innerText))).join(', ');
-                    alert("audience: " + audience)
                   } else {
                     audience = document.querySelector('[data-qa="channel_name"]').innerText;
                   }
